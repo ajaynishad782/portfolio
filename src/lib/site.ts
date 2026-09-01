@@ -7,9 +7,15 @@
  *   These pages are prerendered, so the value is read at BUILD time. On Vercel,
  *   VERCEL_PROJECT_PRODUCTION_URL is used automatically as a fallback.
  */
+/** Ensure a URL has a scheme and no trailing slash (e.g. "example.com" -> "https://example.com"). */
+function normalize(url: string): string {
+  const trimmed = url.trim().replace(/\/$/, "");
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 function resolveSiteUrl(): string {
   const explicit = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
-  if (explicit) return explicit.replace(/\/$/, "");
+  if (explicit) return normalize(explicit);
 
   const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   if (vercel) return `https://${vercel}`;
