@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio
 
-## Getting Started
+A production-ready personal developer portfolio built with Next.js. Modern,
+responsive, accessible, SEO-friendly, and ready to deploy on Vercel.
 
-First, run the development server:
+## Tech stack
+
+- **Next.js** (App Router) + **React 19**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **Framer Motion** — animations (respects `prefers-reduced-motion`)
+- **Lucide React** — icons
+- **ESLint**
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Other scripts:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build    # production build
+npm run start    # serve the production build
+npm run lint     # ESLint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```text
+src/
+├── app/
+│   ├── layout.tsx     # SEO metadata + no-flash theme script + fonts
+│   ├── page.tsx       # composes all sections
+│   └── globals.css    # Tailwind + design tokens + dark mode + a11y
+├── components/        # Navbar, Hero, About, Skills, Experience,
+│   └── ...            # Projects, Education, Contact, Footer, ThemeToggle,
+│                      # SectionHeading, Reveal, SocialLinks
+└── data/
+    └── portfolio.ts   # ← ALL your personal content lives here
+public/
+├── profile.jpg        # your photo (add this file)
+├── resume.pdf         # your resume (add this file)
+└── projects/          # project screenshots
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Update your information
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Everything personal lives in **`src/data/portfolio.ts`**. No personal data is
+hardcoded in the UI — components read exclusively from this file. Replace every
+`[YOUR ...]` placeholder and the sample entries.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Personal / social:** edit `portfolio.personal` and `portfolio.social`.
+  Placeholder social values (starting with `[`) are automatically hidden, so no
+  dead links appear until you add a real URL.
+- **Skills:** edit the `portfolio.skills` array. Only listed technologies show.
+  An empty category is hidden.
+- **Experience:** edit `portfolio.experience`. An empty array hides the section.
+- **Education / certifications:** edit `portfolio.education` /
+  `portfolio.certifications`. Empty → section hidden.
+- **SEO:** update `siteUrl` in `src/app/layout.tsx` once you have a domain.
 
-## Deploy on Vercel
+### Add or edit projects
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Add objects to `portfolio.projects`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```ts
+{
+  name: "My App",
+  description: "What it does and why it matters.",
+  technologies: ["Next.js", "TypeScript"],
+  image: "/projects/my-app.png", // optional; omit/"" for a styled placeholder
+  github: "https://github.com/you/my-app",
+  demo: "https://my-app.vercel.app",
+  featured: true, // featured projects get a larger, side-by-side layout
+}
+```
+
+Put screenshots in `public/projects/` and reference them as `/projects/<file>`.
+
+### Profile image
+
+Add `public/profile.jpg`. Until then the hero shows your initials as a
+placeholder. Change the path via `portfolio.personal.avatar`.
+
+### Resume
+
+Add `public/resume.pdf`. The "Download Resume" button links to
+`portfolio.personal.resume`.
+
+## Contact form
+
+The form has full client-side validation but **does not send email yet** — it
+confirms locally. To deliver messages, wire the submit handler in
+`src/components/Contact.tsx` to a provider:
+
+- **Resend:** add `RESEND_API_KEY` (see `.env.example`), create a route handler
+  at `src/app/api/contact/route.ts`, and `fetch("/api/contact", …)` from the
+  form.
+- **Formspree / Getform:** point the form `action` at your endpoint.
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in values as needed. Only required
+if you connect the contact form to an email provider. Never commit secrets.
+
+## Deploy to Vercel
+
+### Git + dashboard
+
+```bash
+git add .
+git commit -m "Build professional portfolio"
+git push origin main
+```
+
+Import the repo at [vercel.com/new](https://vercel.com/new). Framework preset
+auto-detects Next.js. Add any environment variables in the project settings.
+
+### Vercel CLI
+
+```bash
+npm install -g vercel
+vercel          # preview deployment
+vercel --prod   # production deployment
+```

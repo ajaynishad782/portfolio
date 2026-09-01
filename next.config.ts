@@ -1,7 +1,49 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+// 'unsafe-eval' is required only by `next dev` (React uses eval() for debugging
+// features). It is NOT included in production, where React never uses eval().
+const scriptSrc = isDev
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
+// Baseline security headers applied to every response.
+// Note: the theme no-flash script in layout.tsx is inline, so the CSP allows
+// 'unsafe-inline' for scripts. If you remove/refactor that script, tighten this
+// to a nonce-based policy for a stricter CSP.
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      scriptSrc,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; "),
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
 };
 
 export default nextConfig;
