@@ -13,6 +13,11 @@ export default function Contact() {
   const [values, setValues] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  // Honeypot: hidden field real users never fill. Bots that auto-fill it are
+  // silently dropped by the server.
+  const [company, setCompany] = useState("");
 
   function validate(): Errors {
     const e: Errors = {};
@@ -26,14 +31,38 @@ export default function Contact() {
 
   async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
+    setFormError(null);
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length > 0) return;
 
-    // No email provider is configured yet. Wire this up to Resend / Formspree /
-    // a route handler (see README) — until then we simply confirm locally.
-    setSubmitted(true);
-    setValues({ name: "", email: "", message: "" });
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...values, company }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.errors) setErrors(data.errors as Errors);
+        setFormError(
+          data?.error ??
+            "Something went wrong sending your message. Please try again.",
+        );
+        return;
+      }
+
+      setSubmitted(true);
+      setValues({ name: "", email: "", message: "" });
+    } catch {
+      setFormError(
+        "Network error — please check your connection and try again.",
+      );
+    } finally {
+      setSending(false);
+    }
   }
 
   function field(name: keyof typeof values) {
@@ -83,6 +112,19 @@ export default function Contact() {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
+          {/* Honeypot — hidden from users, visible to bots. */}
+          <div aria-hidden="true" className="hidden">
+            <label htmlFor="company">Company</label>
+            <input
+              id="company"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+          </div>
+
           <div>
             <label htmlFor="name" className="text-sm font-medium">
               Name
@@ -131,19 +173,29 @@ export default function Contact() {
 
           <button
             type="submit"
-            className="bg-accent text-accent-foreground mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium transition-opacity hover:opacity-90 sm:w-auto"
+            disabled={sending}
+            className="bg-accent text-accent-foreground mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             <Send className="h-4 w-4" aria-hidden="true" />
-            Send message
+            {sending ? "Sending…" : "Send message"}
           </button>
+
+          {formError && (
+            <p
+              role="alert"
+              className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500"
+            >
+              {formError}
+            </p>
+          )}
 
           {submitted && (
             <p
               role="status"
               className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-500"
             >
-              Thanks! Your message has been captured. (Connect an email provider
-              to deliver it — see the README.)
+              Thanks! Your message has been sent — I&apos;ll get back to you
+              soon.
             </p>
           )}
         </form>
